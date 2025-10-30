@@ -1,0 +1,63 @@
+//Course.java//
+package com.example.springdi;
+
+public class Course {
+    private String courseName;
+
+    public Course(String courseName) {
+        this.courseName = courseName;
+    }
+
+    public void displayCourse() {
+        System.out.println("Enrolled in course: " + courseName);
+    }
+}
+//Student.java//
+package com.example.springdi;
+
+public class Student {
+    private Course course;
+
+    // Constructor-based Injection
+    public Student(Course course) {
+        this.course = course;
+    }
+
+    public void showDetails() {
+        System.out.println("Student details:");
+        course.displayCourse();
+    }
+}
+//AppConfig.java//
+package com.example.springdi;
+
+import org.springframework.context.annotation.*;
+
+@Configuration
+public class AppConfig {
+
+    @Bean
+    public Course course() {
+        return new Course("Spring Framework with Java Configuration");
+    }
+
+    @Bean
+    public Student student() {
+        return new Student(course());
+    }
+}
+//MainApp.java//
+package com.example.springdi;
+
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+
+public class MainApp {
+    public static void main(String[] args) {
+        AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(AppConfig.class);
+
+        Student student = context.getBean(Student.class);
+        student.showDetails();
+
+        context.close();
+    }
+}
