@@ -1,0 +1,102 @@
+package com.example.hibernate;
+
+import javax.persistence.*;
+
+@Entity
+@Table(name = "student")
+public class Student {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private int id;
+
+    @Column
+    private String name;
+
+    @Column
+    private int age;
+
+    public Student() {}
+    public Student(String name, int age) {
+        this.name = name;
+        this.age = age;
+    }
+
+    // Getters, setters, toString()
+    public int getId() { return id; }
+    public String getName() { return name; }
+    public int getAge() { return age; }
+
+    public void setName(String name) { this.name = name; }
+    public void setAge(int age) { this.age = age; }
+
+    @Override
+    public String toString() {
+        return id + " | " + name + " | Age: " + age;
+    }
+}
+//HibernateUtil.java//
+package com.example.hibernate;
+
+import org.hibernate.*;
+import org.hibernate.cfg.Configuration;
+
+public class HibernateUtil {
+    private static SessionFactory sessionFactory;
+
+    static {
+        try {
+            sessionFactory = new Configuration().configure("hibernate.cfg.xml").buildSessionFactory();
+        } catch (Throwable ex) {
+            throw new ExceptionInInitializerError(ex);
+        }
+    }
+
+    public static SessionFactory getSessionFactory() {
+        return sessionFactory;
+    }
+}
+//StudentCRUD.java//
+package com.example.hibernate;
+
+import org.hibernate.*;
+
+public class StudentCRUD {
+    public static void main(String[] args) {
+        SessionFactory factory = HibernateUtil.getSessionFactory();
+
+        // CREATE
+        Session session = factory.openSession();
+        Transaction tx = session.beginTransaction();
+        Student s1 = new Student("Khushi", 22);
+        session.save(s1);
+        tx.commit();
+        session.close();
+        System.out.println("Student Added!");
+
+        // READ
+        session = factory.openSession();
+        Student s2 = session.get(Student.class, 1);
+        System.out.println("Fetched: " + s2);
+        session.close();
+
+        // UPDATE
+        session = factory.openSession();
+        tx = session.beginTransaction();
+        s2.setAge(23);
+        session.update(s2);
+        tx.commit();
+        session.close();
+        System.out.println("Student Updated!");
+
+        // DELETE
+        session = factory.openSession();
+        tx = session.beginTransaction();
+        Student s3 = session.get(Student.class, 1);
+        session.delete(s3);
+        tx.commit();
+        session.close();
+        System.out.println("Student Deleted!");
+
+        factory.close();
+    }
+}
