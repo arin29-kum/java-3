@@ -1,0 +1,113 @@
+package com.example.bank;
+
+import javax.persistence.*;
+
+@Entity
+@Table(name = "Account")
+public class Account {
+    @Id
+    private int acc_id;
+
+    @Column
+    private String name;
+
+    @Column
+    private double balance;
+
+    // Getters and Setters
+    public int getAcc_id() { return acc_id; }
+    public void setAcc_id(int acc_id) { this.acc_id = acc_id; }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+    public double getBalance() { return balance; }
+    public void setBalance(double balance) { this.balance = balance; }
+}
+//BankService.java//
+package com.example.bank;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+
+@Service
+public class BankService {
+
+    @Autowired
+    private SessionFactory sessionFactory;
+
+    @Transactional
+    public void transferMoney(int fromAcc, int toAcc, double amount) {
+        Session session = sessionFactory.getCurrentSession();
+
+        Account sender = session.get(Account.class, fromAcc);
+        Account receiver = session.get(Account.class, toAcc);
+
+        sender.setBalance(sender.getBalance() - amount);
+        receiver.setBalance(receiver.getBalance() + amount);
+
+        session.update(sender);
+        session.update(receiver);
+
+        System.out.println("Transaction Successful: Transferred ₹" + amount);
+    }
+}
+//SpringConfig.java//
+package com.example.bank;
+
+import org.springframework.context.annotation.*;
+import org.springframework.orm.hibernate5.*;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
+import javax.sql.DataSource;
+import com.zaxxer.hikari.HikariDataSource;
+import org.hibernate.cfg.Environment;
+import java.util.Properties;
+
+@Configuration
+@ComponentScan("com.example.bank")
+@EnableTransactionManagement
+public class SpringConfig {
+
+    @Bean
+    public DataSource dataSource() {
+        HikariDataSource ds = new HikariDataSource();
+        ds.setDriverClassName("com.mysql.cj.jdbc.Driver");
+        ds.setJdbcUrl("jdbc:mysql://localhost:3306/bank");
+        ds.setUsername("root");
+        ds.setPassword("yourpassword");
+        return ds;
+    }
+
+    @Bean
+    public LocalSessionFactoryBean sessionFactory() {
+        LocalSessionFactoryBean factory = new LocalSessionFactoryBean();
+        factory.setDataSource(dataSource());
+        factory.setPackagesToScan("com.example.bank");
+
+        Properties props = new Properties();
+        props.put(Environment.DIALECT, "org.hibernate.dialect.MySQL8Dialect");
+        props.put(Environment.SHOW_SQL, true);
+        factory.setHibernateProperties(props);
+        return factory;
+    }
+
+    @Bean
+    public HibernateTransactionManager transactionManager() {
+        return new HibernateTransactionManager(sessionFactory().getObject());
+    }
+}
+//MainApp.java//
+package com.example.bank;
+
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+
+public class MainApp {
+    public static void main(String[] args) {
+        AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(SpringConfig.class);
+        BankService service = context.getBean(BankService.class);
+
+        service.transferMoney(101, 102, 1000.0);
+        context.close();
+    }
+}
